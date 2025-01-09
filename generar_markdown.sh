@@ -25,6 +25,7 @@ fi
 TAG1=$previous_tag
 TAG2=$last_tag
 
+
 # Check if the first tag exists
 if [ -z "$TAG1" ]; then
   echo "Error: The first tag must be provided as an argument."
@@ -53,8 +54,7 @@ for contributor in $contributors; do
   release_notes+="- $contributor\n"
 done
 
-# Output the release notes to the variable
-echo "$release_notes"
-
-# If you need to use this variable in a GitHub Action, you can set it as an output:
-echo "::set-output name=body::$release_notes"
+# Set the release notes in the GitHub environment variable
+echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
+echo -e "$release_notes" >> $GITHUB_ENV
+echo "EOF" >> $GITHUB_ENV
