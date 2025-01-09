@@ -25,7 +25,6 @@ fi
 TAG1=$previous_tag
 TAG2=$last_tag
 
-
 # Check if the first tag exists
 if [ -z "$TAG1" ]; then
   echo "Error: The first tag must be provided as an argument."
@@ -33,28 +32,30 @@ if [ -z "$TAG1" ]; then
 fi
 
 # Generate the header of the Markdown content
-release_notes="# Release Notes for $TAG2\n"
-release_notes+="## What's Changed\n"
+RELEASE_BODY="# Release Notes for $TAG2\n"
+RELEASE_BODY+="## What's Changed\n"
 
 # Check if the second tag exists
 if git rev-parse "$TAG2" >/dev/null 2>&1; then
   # If both tags exist, show the commits between them
-  release_notes+="$(git log $TAG1..$TAG2 --oneline --pretty=format:"- %s")\n"
+  RELEASE_BODY+="$(git log $TAG1..$TAG2 --oneline --pretty=format:"- %s")\n"
 else
   # If the second tag does not exist, show commits from the beginning of the repo to the first tag
-  release_notes+="$(git log --oneline $TAG1 --pretty=format:"- %s")\n"
+  RELEASE_BODY+="$(git log --oneline $TAG1 --pretty=format:"- %s")\n"
 fi
 
 # Add contributors section
-release_notes+="\n## Contributors:\n"
+RELEASE_BODY+="\n## Contributors:\n"
 
 # Get the list of contributors (commit authors)
 contributors=$(git log $TAG1..$TAG2 --pretty=format:"%an" | sort | uniq)
 for contributor in $contributors; do
-  release_notes+="- $contributor\n"
+  RELEASE_BODY+="- $contributor\n"
 done
 
 # Set the release notes in the GitHub environment variable
-echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
-echo -e "$release_notes" >> $GITHUB_ENV
-echo "EOF" >> $GITHUB_ENV
+{
+  echo "RELEASE_BODY<<EOF"
+  echo -e "$RELEASE_BODY"
+  echo "EOF"
+} >> $GITHUB_ENV
