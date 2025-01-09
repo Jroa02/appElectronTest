@@ -55,7 +55,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           mkdir -p release
-          ls dist/*.app 1>/dev/null 2>&1 && mv dist/*.app release/ || echo "No .app files found."
+          ls dist/*.dmg 1>/dev/null 2>&1 && mv dist/*.dmg release/ || echo "No .dmg files found."
         shell: bash
 
       - name: Archive build artifacts on Windows
