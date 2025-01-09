@@ -49,9 +49,11 @@ RELEASE_BODY+="\n## Contributors:\n"
 
 # Get the list of contributors (commit authors)
 contributors=$(git log $TAG1..$TAG2 --pretty=format:"%an" | sort | uniq)
-for contributor in $contributors; do
+
+# Process each contributor as a whole line
+while IFS= read -r contributor; do
   RELEASE_BODY+="- $contributor\n"
-done
+done <<< "$contributors"
 
 # Set the release notes in the GitHub environment variable
 {
