@@ -77,6 +77,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Create template markdown release
+        run: |
+          pwd
+          chmod +x ./generar_markdown
+          ./generar_markdown.sh
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -99,11 +104,6 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -l ./release
-
-      - name: Create template markdown release
-        run: |
-          chmod +x ./generar_markdown
-          ./generar_markdown.sh
 
       - name: Create GitHub Release
         id: create_release
