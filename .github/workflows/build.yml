@@ -80,10 +80,15 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Create template markdown release
         run: |
           chmod +x ./generar_markdown.sh
           ./generar_markdown.sh
+        
+      - name: Use environment variable
+        run: |
+          echo "The value of RELEASE_BODY is $RELEASE_BODY"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
