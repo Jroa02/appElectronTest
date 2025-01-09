@@ -55,9 +55,15 @@ while IFS= read -r contributor; do
   RELEASE_BODY+="- $contributor\n"
 done <<< "$contributors"
 
-# Set the release notes in the GitHub environment variable
-{
-  echo "RELEASE_BODY<<EOF"
-  echo -e "$RELEASE_BODY"
-  echo "EOF"
-} >> $GITHUB_ENV
+# Save the release notes to a local file
+if [ "$1" == "local" ]; then
+  echo -e "$RELEASE_BODY" > release_notes.md
+  echo "Release notes saved to release_notes.md"
+else
+  # Export the release notes as a GitHub Actions environment variable
+  {
+    echo "RELEASE_BODY<<EOF"
+    echo -e "$RELEASE_BODY"
+    echo "EOF"
+  } >> $GITHUB_ENV
+fi
