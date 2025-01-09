@@ -108,7 +108,16 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: View changes
+          body: |
+            ## What's Changed
+            ${{ steps.changelog.outputs.changes }}
+
+            ## Contributors
+            ${{ steps.changelog.outputs.contributors }}
+
+            ## Full Changelog:
+            [View changes](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})
+            
           draft: false
           prerelease: false
 
