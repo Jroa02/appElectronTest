@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*' # Solo se ejecutará en tags que comiencen con "v"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
