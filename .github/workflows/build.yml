@@ -1,0 +1,149 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Solo se ejecutará en tags que comiencen con "v"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo snap install snapcraft --classic
+          npm run build:linux
+
+      - name: Build for macOS
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
+
+      - name: Build for Windows
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
+
+      - name: Archive build artifacts
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p release
+          ls dist/*.deb 1>/dev/null 2>&1 && mv dist/*.deb release/ || echo "No .deb files found."
+          ls dist/*.snap 1>/dev/null 2>&1 && mv dist/*.snap release/ || echo "No .snap files found."
+          ls dist/*.AppImage 1>/dev/null 2>&1 && mv dist/*.AppImage release/ || echo "No .AppImage files found."
+          ls mount-logs.sh 1>/dev/null 2>&1 && mv mount-logs.sh release/ || echo "No mount-logs.sh found."
+        shell: bash
+
+      - name: Archive build artifacts on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p release
+          ls dist/*.app 1>/dev/null 2>&1 && mv dist/*.app release/ || echo "No .app files found."
+        shell: bash
+
+      - name: Archive build artifacts on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          New-Item -ItemType Directory -Force -Path release
+          if (Test-Path "dist/*.exe") {
+            Move-Item dist/*.exe release/
+          } else {
+            Write-Output "No .exe files found."
+          }
+        shell: pwsh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-artifacts
+          path: release/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu-latest-artifacts
+          path: ./release/linux
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-latest-artifacts
+          path: ./release/macos
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-latest-artifacts
+          path: ./release/windows
+        continue-on-error: true
+
+      - name: Display structure of downloaded files
+        run: ls -l ./release
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## What's Changed
+            ${{ steps.changelog.outputs.changes }}
+
+            ## Contributors
+            ${{ steps.changelog.outputs.contributors }}
+
+            ## Full Changelog:
+            [View changes](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Define an array with the compatible paths
+          paths=(
+            "./release/linux/*.deb"
+            "./release/linux/*.snap"
+            "./release/linux/*.AppImage"
+            "./release/macos/*.dmg"
+            "./release/windows/*.exe"
+            "./release/linux/mount-logs.sh"
+          )
+
+          # Iterate over all defined paths
+          for path in "${paths[@]}"; do
+            for file in $path; do
+              if [ -f "$file" ]; then
+                asset_name=$(basename "$file")
+                curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                    -H "Content-Type: $(file -b --mime-type "$file")" \
+                    --data-binary @"$file" \
+                    "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.id }}/assets?name=${asset_name}"
+              fi
+            done
+          done
