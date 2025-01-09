@@ -79,8 +79,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Create template markdown release
         run: |
-          pwd
-          chmod +x ./generar_markdown
+          chmod +x ./generar_markdown.sh
           ./generar_markdown.sh
 
       - name: Download build artifacts
