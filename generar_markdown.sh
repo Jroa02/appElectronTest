@@ -24,7 +24,6 @@ fi
 # Assign the tags to the variables TAG1 and TAG2
 TAG1=$previous_tag
 TAG2=$last_tag
-OUTPUT_FILE="recent_changes.md"
 
 # Check if the first tag exists
 if [ -z "$TAG1" ]; then
@@ -32,26 +31,30 @@ if [ -z "$TAG1" ]; then
   exit 1
 fi
 
-# Generate the header of the Markdown file
-echo "# Release Notes for $TAG2" > $OUTPUT_FILE
-echo "## What's Changed" >> $OUTPUT_FILE
+# Generate the header of the Markdown content
+release_notes="# Release Notes for $TAG2\n"
+release_notes+="## What's Changed\n"
 
 # Check if the second tag exists
 if git rev-parse "$TAG2" >/dev/null 2>&1; then
   # If both tags exist, show the commits between them
-  git log $TAG1..$TAG2 --oneline --pretty=format:"- %s" >> $OUTPUT_FILE
+  release_notes+="$(git log $TAG1..$TAG2 --oneline --pretty=format:"- %s")\n"
 else
   # If the second tag does not exist, show commits from the beginning of the repo to the first tag
-  git log --oneline $TAG1 --pretty=format:"- %s" >> $OUTPUT_FILE
+  release_notes+="$(git log --oneline $TAG1 --pretty=format:"- %s")\n"
 fi
 
 # Add contributors section
-echo "" >> $OUTPUT_FILE
-echo "## Contributors:" >> $OUTPUT_FILE
+release_notes+="\n## Contributors:\n"
 
 # Get the list of contributors (commit authors)
-git log $TAG1..$TAG2 --pretty=format:"%an" | sort | uniq | while read contributor; do
-  echo "- $contributor" >> $OUTPUT_FILE
+contributors=$(git log $TAG1..$TAG2 --pretty=format:"%an" | sort | uniq)
+for contributor in $contributors; do
+  release_notes+="- $contributor\n"
 done
 
-echo "File $OUTPUT_FILE generated successfully."
+# Output the release notes to the variable
+echo "$release_notes"
+
+# If you need to use this variable in a GitHub Action, you can set it as an output:
+echo "::set-output name=body::$release_notes"
