@@ -1,6 +1,6 @@
 # appelectrontest
 
-A minimal Electron application with JavaScript
+A minimal Electron application with JavaScript test
 
 ## Recommended IDE Setup
 
