@@ -47,20 +47,20 @@ if [ -n "$GITHUB_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ]; then
     | jq -r '.commits[].author.login // empty' | sort -u)
   mentions=""
   while IFS= read -r login; do
-    [ -n "$login" ] && mentions+="@$login "
+    [ -n "$login" ] && mentions+="- @$login\n"
   done <<< "$logins"
-  [ -n "$mentions" ] && RELEASE_BODY+="\n## New Contributors\n$mentions\n"
+  [ -n "$mentions" ] && RELEASE_BODY+="\n## New Contributors\n$mentions"
 else
   contributors=$(git log "$TAG1".."$TAG2" --pretty=format:"%an" | sort | uniq)
   mentions=""
   while IFS= read -r contributor; do
     if [[ "$contributor" == *" "* ]]; then
-      mentions+="$contributor "
+      mentions+="- $contributor\n"
     else
-      mentions+="@$contributor "
+      mentions+="- @$contributor\n"
     fi
   done <<< "$contributors"
-  [ -n "$mentions" ] && RELEASE_BODY+="\n## New Contributors\n$mentions\n"
+  [ -n "$mentions" ] && RELEASE_BODY+="\n## New Contributors\n$mentions"
 fi
 
 
