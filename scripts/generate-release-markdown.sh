@@ -41,6 +41,28 @@ else
   RELEASE_BODY+="$(git log "$TAG1" --pretty=format:"- %s")\n"
 fi
 
+if [ -n "$GITHUB_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ]; then
+  logins=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+    "https://api.github.com/repos/$GITHUB_REPOSITORY/compare/${TAG1}...${TAG2}" \
+    | jq -r '.commits[].author.login // empty' | sort -u)
+  mentions=""
+  while IFS= read -r login; do
+    [ -n "$login" ] && mentions+="@$login "
+  done <<< "$logins"
+  [ -n "$mentions" ] && RELEASE_BODY+="\n## New Contributors\n$mentions\n"
+else
+  contributors=$(git log "$TAG1".."$TAG2" --pretty=format:"%an" | sort | uniq)
+  mentions=""
+  while IFS= read -r contributor; do
+    if [[ "$contributor" == *" "* ]]; then
+      mentions+="$contributor "
+    else
+      mentions+="@$contributor "
+    fi
+  done <<< "$contributors"
+  [ -n "$mentions" ] && RELEASE_BODY+="\n## New Contributors\n$mentions\n"
+fi
+
 
 
 if [ "$1" == "local" ]; then
