@@ -53,7 +53,11 @@ if [ -n "$GITHUB_TOKEN" ] && [ -n "$GITHUB_REPOSITORY" ]; then
 else
   contributors=$(git log "$TAG1".."$TAG2" --pretty=format:"%an" | sort | uniq)
   while IFS= read -r contributor; do
-    RELEASE_BODY+="- $contributor\n"
+    if [[ "$contributor" == *" "* ]]; then
+      RELEASE_BODY+="- $contributor\n"
+    else
+      RELEASE_BODY+="- @$contributor\n"
+    fi
   done <<< "$contributors"
 fi
 
